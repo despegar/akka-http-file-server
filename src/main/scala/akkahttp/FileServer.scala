@@ -40,10 +40,10 @@ class FileServer(system: ActorSystem, host: String, port: Int) {
     } ~
     pathEndOrSingleSlash {
       val entity = HttpEntity(MediaTypes.`text/html`,
-          """
+          s"""
             |
             |<h2>Please specify a file to upload:</h2>
-            |<form action="http://127.0.0.1:9112/upload" enctype="multipart/form-data" method="post">
+            |<form action="http://$host:$port/upload" enctype="multipart/form-data" method="post">
             |<input type="file" name="datafile" size="40">
             |</p>
             |<div>
