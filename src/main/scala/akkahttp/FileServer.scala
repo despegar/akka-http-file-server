@@ -2,12 +2,13 @@ package akkahttp
 
 import java.io.File
 
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.marshalling.{ToResponseMarshallable, Marshal}
 import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest, MediaTypes, Multipart, _}
+import akka.http.scaladsl.model.{HttpResponse, HttpEntity, HttpRequest, MediaTypes, Multipart, _}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.Unmarshal
@@ -35,9 +36,16 @@ class FileServer(system: ActorSystem, host: String, port: Int) {
     } ~
     path("download") {
       parameters("file") { file =>
-        downloadFile(file)
-      }
-    } ~
+          val f = new File(file)
+          val responseEntity = HttpEntity(
+            MediaTypes.`application/octet-stream`,
+            f.length,
+            SynchronousFileSource(f, chunkSize = 262144))
+
+          complete(HttpResponse(200, entity = responseEntity)
+            .withHeaders(RawHeader("Content-Disposition", s"attachment; filename=$file")))
+        }
+      } ~
     pathEndOrSingleSlash {
       val entity = HttpEntity(MediaTypes.`text/html`,
           s"""

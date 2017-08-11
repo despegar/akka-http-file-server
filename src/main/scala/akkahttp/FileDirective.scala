@@ -23,10 +23,11 @@ object FileDirective {
       entity(as[Multipart.FormData]) { (formdata: Multipart.FormData) =>
         val fileNameMap = formdata.parts.mapAsync(1) { p =>
           if (p.filename.isDefined) {
-            val targetPath = File.createTempFile(s"userfile_${p.name}_${p.filename.getOrElse("")}", "")
+            val targetPath = new File(p.filename.getOrElse(p.name), "")
             val written = p.entity.dataBytes.runWith(SynchronousFileSink(targetPath))
-            written.map(written => 
-              Map(p.name -> FileInfo(p.filename.get, targetPath.getAbsolutePath, written)))
+            written.map { written => 
+              Map(p.name -> FileInfo(p.filename.get, targetPath.getAbsolutePath, written))
+            }
           } else {
             Future(Map.empty[Name, FileInfo])
           }
@@ -48,14 +49,5 @@ object FileDirective {
         }
       }
     }
-  }
-
-  def downloadFile(file: String): Route = {
-    val f = new File(file)
-    val responseEntity = HttpEntity(
-      MediaTypes.`application/octet-stream`,
-      f.length,
-      SynchronousFileSource(f, chunkSize = 262144))
-    complete(responseEntity)
   }
 }
